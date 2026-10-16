@@ -1,0 +1,22 @@
+# Build directories
+build/
+bin/
+*.exe
+*.o
+*.a
+*.obj
+*.lib
+
+# SQLite databases
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+data/*.db
+data/*.db-wal
+data/*.db-shm
+
+# IDE and tool files
+.vscode/
+.idea/
+CMakeUserPresets.json
