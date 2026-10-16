@@ -5,12 +5,25 @@ namespace database {
 
 void Schema::initializeSchema(DbConnection& db) {
     const std::string ddl = R"SQL(
+    -- 0. Schema Migrations table
+    CREATE TABLE IF NOT EXISTS schema_migrations (
+        version INTEGER PRIMARY KEY,
+        applied_at TEXT NOT NULL,
+        description TEXT
+    );
+
     -- 1. Sessions table
     CREATE TABLE IF NOT EXISTS sessions (
         session_id TEXT PRIMARY KEY,
+        title TEXT,
         created_at TEXT NOT NULL,
+        updated_at TEXT,
+        last_opened_at TEXT,
+        ended_at TEXT,
         status TEXT NOT NULL DEFAULT 'DRAFT',
+        active_config_version INTEGER NOT NULL DEFAULT 1,
         description TEXT,
+        notes TEXT,
         metadata TEXT
     );
 
@@ -312,6 +325,19 @@ void Schema::initializeSchema(DbConnection& db) {
     CREATE INDEX IF NOT EXISTS idx_event_logs_session ON event_logs(session_id);
     CREATE INDEX IF NOT EXISTS idx_reports_session ON reports(session_id);
     CREATE INDEX IF NOT EXISTS idx_reports_run ON reports(run_id);
+
+    -- Compatibility Views for PDF specification
+    CREATE VIEW IF NOT EXISTS session_configurations AS
+    SELECT id, session_id, version AS config_version, settings_json AS config_json, is_finalized AS finalized, created_at
+    FROM configuration_versions;
+
+    CREATE VIEW IF NOT EXISTS session_checkpoints AS
+    SELECT checkpoint_id, session_id, run_id, simulated_time, state_snapshot, created_at
+    FROM checkpoints;
+
+    -- Initial migration record
+    INSERT OR IGNORE INTO schema_migrations (version, applied_at, description)
+    VALUES (1, '2026-10-16T00:00:00Z', 'Initial schema foundation with 24 relational entities');
     )SQL";
 
     db.execute(ddl);
